@@ -1,3 +1,6 @@
+> [!NOTE]
+> **Fork notice:** this repository is a fork of [kuska1/Material-Theme](https://github.com/kuska1/Material-Theme). The theme manifest, releases, screenshots, authorship, and support links below refer to the upstream project. Use the upstream repository for official releases and support; this fork is a personal development snapshot maintained under the original MIT license.
+
 <p align="center">
     <a href="https://github.com/kuska1/Material-Theme/">
         <picture>
