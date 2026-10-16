@@ -484,6 +484,14 @@
     border-top-left-radius: var(--corner-radius-medium);
     border-top-right-radius: var(--corner-radius-medium);
 }
+/* Steam's Achievements Icon Overflow */
+._2YS0EBJmY2Rvs07zZ90UIJ {
+    padding-inline-start: 46px;
+}
+/* Steam's Large Gap Fix */
+._2r4TK4BAuU-J4FuF_O7v_5 {
+    margin-bottom: 0px;
+}
 /* From your Steam library */
 .z8GYwNt_nbBZrf7OVjs-s {
     min-height: unset;
@@ -584,6 +592,10 @@
 ._3x31AgESSlUqX3D4MTHv2m ._37e7DrDNmf1FmsMGA5y0A0 ._2JSyABqFEh-v_dwaTnBydR,
 ._3x31AgESSlUqX3D4MTHv2m ._37e7DrDNmf1FmsMGA5y0A0 button.bACIuqv-b_9TztCczFK19 {
     border-radius: var(--corner-radius-full);
+}
+._5BtHMjT9usALaSWHGugdV .u5Kx6dkUppvb-1qV4IIuy {
+    width: 6px;
+    height: 6px;
 }
 /* View Latest News */
 ._1EC1xjjUGqI7fqX6PVzJA3 {
@@ -1584,11 +1596,11 @@ html[lang="ja"] .MillenniumThemes_AccentColorField ._1W1to_azoBRG95oNAFpf9Q::aft
 }
 
 /* Sub Options */
-.MillenniumDesktopSidebar_EditorContent .DialogBody .eKmEXJCm_lgme24Fp_HWt:not(._2QgNsvFPYTZ5yRiTm7mUyu).xIITXDcM70faUNqssgUyx.\-:nth-of-type(even) {
+.MillenniumDesktopSidebar_EditorContent .DialogBody .eKmEXJCm_lgme24Fp_HWt:not(._2QgNsvFPYTZ5yRiTm7mUyu).xIITXDcM70faUNqssgUyx[data-condition*="\-"]:nth-of-type(even) {
     padding-left: 12px;
     padding-top: 0px;
 }
-.MillenniumDesktopSidebar_EditorContent .DialogBody:has(> .\-) .eKmEXJCm_lgme24Fp_HWt:not(._2QgNsvFPYTZ5yRiTm7mUyu).xIITXDcM70faUNqssgUyx:nth-of-type(odd)::after {
+.MillenniumDesktopSidebar_EditorContent .DialogBody:has(> div[data-condition*="\-"]) .eKmEXJCm_lgme24Fp_HWt:not(._2QgNsvFPYTZ5yRiTm7mUyu).xIITXDcM70faUNqssgUyx:nth-of-type(odd)::after {
     display: none;
 }
 
@@ -1602,13 +1614,15 @@ html[lang="ja"] .MillenniumThemes_AccentColorField ._1W1to_azoBRG95oNAFpf9Q::aft
     word-break: keep-all;
     text-transform: uppercase;
 }
-.MillenniumDesktopSidebar_EditorContent .Ripple.Effect:nth-child(3) ._3jMlJm4PQCA8SfNlUR99Fo::after {
+.MillenniumDesktopSidebar_EditorContent .DialogBody > div[data-condition="Ripple Effect"] ._2VcTlXFC64Jtg9gvtT6cmY > .FieldLabel::after {
     content: "Beta";
 }
-.MillenniumDesktopSidebar_EditorContent .Hide.Left.Sidebar:nth-child(3) ._3jMlJm4PQCA8SfNlUR99Fo::after,
-.MillenniumDesktopSidebar_EditorContent .Chat.Animations:nth-child(4) ._3jMlJm4PQCA8SfNlUR99Fo::after,
-.MillenniumDesktopSidebar_EditorContent .Custom\/Dynamic.Color.Generation.Style:nth-child(4) ._3jMlJm4PQCA8SfNlUR99Fo::after {
+.MillenniumDesktopSidebar_EditorContent .DialogBody > div[data-condition="Library Slide In Animation"] ._2VcTlXFC64Jtg9gvtT6cmY > .FieldLabel::after {
     content: "New";
+}
+.MillenniumDesktopSidebar_EditorContent .DialogBody:has(> div[data-condition="Background Opacity Toggle"] .Toggle[aria-checked="false"]) div[data-condition="Background Opacity Slider"] {
+    opacity: 0.5;
+    pointer-events: none;
 }
 
 /* Fix */

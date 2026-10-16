@@ -13,7 +13,7 @@
 
 # Material
 ### Theme for Steam ([Millenium](https://steambrew.app)) based on Google's Material 3 Design with some Features.
-[Discord](https://discord.gg/aGcKmX5KTs)
+[Discord](https://discord.gg/aGcKmX5KTs) | [Patreon](https://www.patreon.com/c/flowird) | [Ko-fi](https://ko-fi.com/flowird)
 
 ## Screenshots
 ![Library](https://raw.githubusercontent.com/kuska1/Material-Theme/refs/heads/main/.github/library.jpg)
@@ -70,4 +70,6 @@
 * [SpaceTheme](https://github.com/SpaceTheme/Steam)
 
 ## Contact & Support
-[Personal Website](https://kuska1.github.io/) or [Discord Server](https://discord.gg/aGcKmX5KTs)
+* [Discord Server](https://discord.gg/aGcKmX5KTs)
+* [Patreon](https://www.patreon.com/c/flowird)
+* [Ko-fi](https://ko-fi.com/flowird)
