@@ -1,0 +1,7 @@
+apollo17.jpg: NASA, Apollo 17 crew, photograph of Earth (1972), public domain.
+Source: https://commons.wikimedia.org/wiki/File:The_Earth_seen_from_Apollo_17.jpg
+250px thumbnail downloaded from Wikimedia Commons. Original file name:
+The_Earth_seen_from_Apollo_17.jpg
+
+Procedural RGBA fixtures in ../color-fixtures.cjs are original project test data,
+carried forward from Material Theme PR #60, commit 2e36eff.

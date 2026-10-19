@@ -46,3 +46,13 @@ test('configured entrypoints and explicit patches exist', () => {
         }
     }
 });
+
+test('every color condition declares its runtime mode without adding a setting', () => {
+    const expected = { 'Dynamic (Beta)': 'dynamic', Custom: 'custom', Matugen: 'matugen', Red: 'static', Green: 'static', Blue: 'static', Yellow: 'static' };
+    for (const [name, mode] of Object.entries(expected)) {
+        const condition = skin.Conditions.Color.values[name];
+        const css = fs.readFileSync(path.join(root, condition.TargetCss.src), 'utf8');
+        assert.match(css, new RegExp(`--material-color-mode:\\s*${mode}\\s*;`), name);
+        if (mode !== 'static') assert.ok(condition.TargetJs, name);
+    }
+});

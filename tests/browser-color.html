@@ -1,0 +1,114 @@
+<!doctype html><meta charset="utf-8"><title>Material color subsystem integration</title>
+<h1>Controlled Chromium color tests</h1><p>Not a Steam compatibility test.</p><pre id="results">Running</pre>
+<script type="module">
+const checks = [], timings = [];
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+const check = (name, condition, detail) => { checks.push({name, passed:!!condition, detail}); if(!condition) console.error(name, detail); };
+async function until(predicate) { for(let i=0;i<100;i++) { if(predicate())return; await wait(25); } throw Error('Test readiness timed out'); }
+async function frame(library=true) {
+    const element=document.createElement('iframe'); element.src='/tests/color-frame.html?library='+library; document.body.append(element);
+    await until(()=>element.contentWindow.ready);
+    return {element,w:element.contentWindow,d:element.contentDocument};
+}
+const key='material-dynamic-color'; localStorage.removeItem(key);
+try {
+    const utils=await import('/js/main/colors/material-color-utils.js');
+    const artwork=await import('/js/main/colors/artwork.js');
+    const fixtures=await(await fetch('/fixtures')).json();
+    const photo=new Image();photo.src='/tests/fixtures/apollo17.jpg';await photo.decode();
+    const raster=document.createElement('canvas');raster.width=photo.naturalWidth;raster.height=photo.naturalHeight;
+    const photoContext=raster.getContext('2d');photoContext.drawImage(photo,0,0);
+    fixtures.push({name:'NASA Apollo 17 public-domain photograph',width:raster.width,height:raster.height,pixels:photoContext.getImageData(0,0,raster.width,raster.height).data});
+    const dense=new Uint8ClampedArray(40000);
+    for(let i=0;i<10000;i++){const n=i%4096;dense.set([(n>>8)*16+8,((n>>4)&15)*16+8,(n&15)*16+8,255],i*4);}
+    fixtures.push({name:'All 4096 histogram bins',width:100,height:100,pixels:dense});
+    const selected=[];
+    for(const f of fixtures) {
+        const canvas=document.createElement('canvas');canvas.width=f.width;canvas.height=f.height;
+        canvas.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(f.pixels),f.width,f.height),0,0);
+        const img=new Image();img.src=canvas.toDataURL();await img.decode();
+        for(let i=0;i<5;i++)try{await artwork.getAccentColorFromImage(img)}catch{}
+        const samples=[];let color=0;
+        for(let i=0;i<15;i++){const start=performance.now();try{color=await artwork.getAccentColorFromImage(img)}catch{color=0}samples.push(performance.now()-start);}
+        samples.sort((a,b)=>a-b);selected.push({name:f.name,color:color?utils.hexFromArgb(color):null});
+        timings.push({name:f.name,medianMs:samples[7],p95Ms:samples[14]});
+    }
+    const green=utils.Hct.fromInt(utils.argbFromHex(selected[0].color));
+    check('real canvas groups the dominant green gradient',green.hue>120&&green.hue<180,selected[0]);
+    check('real canvas preserves muted artwork',selected[1].color!==null,selected[1]);
+    check('neutral and transparent inputs have no forced accent',selected[4].color===null&&selected[10].color===null);
+    const main=await frame(); const {w,d}=main;
+    const css=()=>d.getElementById('material-colors')?.textContent;
+    const img=(color,delay=0,fail=false)=>{const i=d.createElement('img');i.className='HNbe3eZf6H7dtJ042x1vM HSQWw9HUAP6jtA2OZjS-u';i.src='/image.svg?color='+color+'&delay='+delay+(fail?'&fail=1':'')+'&n='+Math.random();return i;};
+    const red=img('red',700);d.body.append(red);await wait(250);const greenImg=img('green');red.replaceWith(greenImg);await wait(850);
+    check('real observer and delayed navigation keep latest game',localStorage.getItem(key)===String(0xff008000));
+    const count=w.extractions;const palette=css();
+    for(let i=0;i<4;i++)d.getElementById('RootColors').textContent+='\n';
+    await wait(150);check('unchanged artwork settings refresh reuses extraction',w.extractions===count);
+    greenImg.src='/image.svg?color=blue';await wait(350);check('reused image src commits blue',localStorage.getItem(key)===String(0xff0000ff));
+    const saved=css();greenImg.remove();await wait(300);check('removed artwork retains last valid fallback',css()===saved);
+    const slow=img('red',700);d.body.append(slow);await wait(250);await w.setMode('custom');await wait(100);const custom=css();await wait(700);
+    check('pending Dynamic request cannot overwrite Custom',css()===custom&&localStorage.getItem(key)===String(0xff0000ff));
+    slow.remove();await w.setMode('dynamic');await wait(100);check('cached module resumes Dynamic after mode switch',css()===saved);
+    for(let i=0;i<3;i++)await w.reinject();
+    const before=w.extractions;d.body.append(img('green'));await wait(350);
+    check('cache-busted reinjection has one active extraction owner',w.extractions===before+1,{before,after:w.extractions});
+    check('reinjection has exactly one generated palette',d.querySelectorAll('#material-colors').length===1);
+    const popup=await frame(false);await wait(100);check('new popup reads last stored palette',popup.d.getElementById('material-colors')?.textContent===css());
+    const current=d.querySelector('img');current.src='/image.svg?color=red';await wait(350);
+    check('real storage event synchronizes same-origin popup',popup.d.getElementById('material-colors')?.textContent===css());
+    await w.setMode('static');await wait(50);check('static selection removes dynamic palette',!d.getElementById('material-colors'));
+    localStorage.setItem(key,String(0xff0000ff));await wait(100);check('inactive mode ignores storage updates',!d.getElementById('material-colors'));
+    const fetched=[];
+    w.fetch=async url=>{fetched.push(url);return fetched.length===1?{ok:false,text:async()=>'<html>missing</html>'}:{ok:true,text:async()=>':root { --md-sys-color-primary: #123456; }'};};
+    await w.setMode('matugen');await wait(50);
+    check('Matugen immediately tries its alternate endpoint',fetched.length===2&&d.getElementById('material-matugen-colors')?.textContent.includes('#123456'));
+    await w.setMode('custom');await wait(50);
+    check('leaving Matugen removes its stylesheet and restores generated palette',!d.getElementById('material-matugen-colors')&&!!d.getElementById('material-colors'));
+    await w.setMode('dynamic');await wait(150);
+    current.srcset='/image.svg?color=green&responsive=1 1x';await wait(350);
+    check('real responsive currentSrc selection follows srcset changes',localStorage.getItem(key)===String(0xff008000));
+    current.removeAttribute('srcset');await wait(350);
+    check('removing srcset returns to the requested src artwork',localStorage.getItem(key)===String(0xffff0000));
+    const bad=img('green',0,true);current.replaceWith(bad);await wait(350);check('failed artwork keeps last successful local color',localStorage.getItem(key)===String(0xffff0000));
+    bad.replaceWith(img('blue'));await wait(350);check('recovery after failed load commits a valid image',localStorage.getItem(key)===String(0xff0000ff));
+    w.dispatchEvent(new w.PageTransitionEvent('pagehide',{persisted:true}));await wait(30);
+    check('bfcache suspension removes the active palette',!d.getElementById('material-colors'));
+    w.dispatchEvent(new w.PageTransitionEvent('pageshow',{persisted:true}));await wait(100);
+    check('bfcache resume restarts one controller',!!d.getElementById('material-colors'));
+    const linked=await frame(false);
+    const marker=linked.d.createElement('link');marker.rel='stylesheet';marker.href='/css/main/colors/custom-mode.css';linked.d.head.append(marker);
+    await new Promise((resolve,reject)=>{marker.onload=resolve;marker.onerror=reject;});
+    await linked.w.setMode('custom');linked.d.documentElement.style.removeProperty('--material-color-mode');await wait(50);
+    check('real linked mode stylesheet selects Custom',getComputedStyle(linked.d.documentElement).getPropertyValue('--material-color-mode').trim()==='custom'&&!!linked.d.getElementById('material-colors'));
+    marker.href='/css/main/colors/blue.css';await new Promise((resolve,reject)=>{marker.onload=resolve;marker.onerror=reject;});await wait(50);
+    check('real linked static stylesheet disposes the cached Custom controller',!linked.d.getElementById('material-colors'),{marker:getComputedStyle(linked.d.documentElement).getPropertyValue('--material-color-mode').trim()});
+    const wrapper=d.createElement('div'),original=img('red');original.className='HNbe3eZf6H7dtJ042x1vM';
+    await original.decode();wrapper.append(original);d.querySelector('img').replaceWith(wrapper);await wait(250);
+    wrapper.className='QlR9EFwTdUNm_J5vx54_Z';await wait(350);
+    check('real ancestor class mutation discovers already loaded original artwork',localStorage.getItem(key)===String(0xffff0000));
+    const pairs=[['on-primary','primary'],['on-primary-container','primary-container'],['on-secondary','secondary'],['on-secondary-container','secondary-container'],['on-surface','surface'],['on-error','error']];
+    const paletteModule=await import('/js/main/colors/palette.js');
+    const luminance=color=>{const c=[utils.redFromArgb(color),utils.greenFromArgb(color),utils.blueFromArgb(color)].map(v=>utils.linearized(v)/100);return c[0]*.2126+c[1]*.7152+c[2]*.0722;};
+    let minimum=Infinity,oledBlack=true;
+    for(const appearance of ['light','dark','oled']) {
+        const link=document.createElement('link');link.rel='stylesheet';link.href='/css/main/appearance/'+appearance+'.css';document.head.append(link);await new Promise((resolve,reject)=>{link.onload=resolve;link.onerror=reject;});
+        for(const style of ['fidelity','tonal-spot','vibrant','expressive','neutral','monochrome']) {
+            document.documentElement.style.setProperty('--md-color-generation-style',style);
+            for(const f of selected.filter(f=>f.color)) {
+                paletteModule.applyPalette(f.color);const computed=getComputedStyle(document.documentElement);
+                for(const [a,b]of pairs){const la=luminance(utils.argbFromHex(computed.getPropertyValue('--md-sys-color-'+a).trim())),lb=luminance(utils.argbFromHex(computed.getPropertyValue('--md-sys-color-'+b).trim()));minimum=Math.min(minimum,(Math.max(la,lb)+.05)/(Math.min(la,lb)+.05));}
+                if(appearance==='oled')for(const role of ['surface','surface-container'])oledBlack&&=utils.argbFromHex(computed.getPropertyValue('--md-sys-color-'+role).trim())===0xff000000;
+            }
+        }
+        link.remove();
+    }
+    check('six measured role pairs retain contrast in all 18 mode/style combinations',minimum>=4.5,{minimum});
+    check('OLED important surfaces remain true black',oledBlack);
+    check('no uncaught controller errors',w.errors.length===0&&popup.w.errors.length===0,[...w.errors,...popup.w.errors]);
+    main.element.remove();popup.element.remove();linked.element.remove();
+    window.colorTestReport={browser:navigator.userAgent,checks,selected,timings};
+} catch(error) {check('fixture completion',false,String(error.stack));window.colorTestReport={checks};}
+document.getElementById('results').textContent=JSON.stringify(window.colorTestReport,null,2);
+await fetch('/results',{method:'POST',body:JSON.stringify(window.colorTestReport)});
+</script>

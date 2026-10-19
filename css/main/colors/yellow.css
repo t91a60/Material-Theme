@@ -1,4 +1,5 @@
 :root {
+    --material-color-mode: static;
     --theme-color: "Yellow";
     --hue-rotate: 220deg;
     --md-sys-color-primary: var(--scheme-light, rgb(109 94 15)) var(--scheme-dark, rgb(219 198 110));

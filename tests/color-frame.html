@@ -1,0 +1,19 @@
+<!doctype html><meta charset="utf-8"><title>Isolated color test context</title>
+<style id="RootColors">:root { --custom-accent-color:#4cb4ff; --scheme:dark; --material-color-mode:dynamic; --md-color-generation-style:fidelity; --dynamic-color-transition-enabled:false; }</style>
+<body><script type="module">
+const query = new URLSearchParams(location.search);
+if (query.get('library') !== 'false') document.documentElement.className = 'Rp8QOGJ2DypeDniMnRBhr';
+window.errors = [];
+addEventListener('error', event => window.errors.push(event.message));
+addEventListener('unhandledrejection', event => window.errors.push(String(event.reason)));
+window.extractions = 0;
+const create = document.createElement.bind(document);
+document.createElement = (...args) => { if(args[0] === 'canvas') window.extractions++; return create(...args); };
+window.entry = await import('/js/main/colors/dynamic.js');
+window.setMode = async mode => {
+    document.documentElement.style.setProperty('--material-color-mode', mode);
+    if (['dynamic','custom','matugen'].includes(mode)) await import('/js/main/colors/' + mode + '.js');
+};
+window.reinject = () => import('/js/main/colors/dynamic.js?reinjection=' + Math.random());
+window.ready = true;
+</script>

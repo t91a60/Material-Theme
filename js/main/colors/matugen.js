@@ -1,34 +1,57 @@
-const logText = '%c Material '
-const logCss = 'background: #256ab8; color: #ffffff'
+import { installColorMode } from './runtime.js';
 
-console.debug(logText, logCss, `matugen.js is running in ${window.location.href}.`);
+const urls = [
+  'https://steamloopback.host/skins/Material-Theme/css/main/colors/matugen.css',
+  'https://millennium.host/v1/themes/Material-Theme/css/main/colors/matugen.css',
+];
 
-const PRIMARY_URL = "https://steamloopback.host/skins/Material-Theme/css/main/colors/matugen.css";
-const FALLBACK_URL = "https://millennium.host/v1/themes/Material-Theme/css/main/colors/matugen.css";
+export function startMatugen(scope) {
+  const style = document.createElement('style');
+  style.id = 'material-matugen-colors';
+  document.head.appendChild(style);
+  let timer;
+  let request;
+  let preferred = 0;
+  let running = false;
 
-let link_url = PRIMARY_URL;
-
-const styleTag = document.createElement('style');
-document.head.appendChild(styleTag);
-
-async function refresh() {
-  try {
-    const res = await fetch(link_url);
-    const text = await res.text();
-
-    if (!res.ok || text.trim().toLowerCase().startsWith('<html') || text.includes('File Not Found')) {
-      const newUrl = link_url === PRIMARY_URL ? FALLBACK_URL : PRIMARY_URL;
-      console.debug(logText, logCss, `${link_url} returned "File Not Found", switching to ${newUrl}`);
-      link_url = newUrl;
-      return;
+  async function refresh() {
+    if (running || scope.signal.aborted) return;
+    running = true;
+    try {
+      for (const index of [preferred, 1 - preferred]) {
+        if (scope.signal.aborted) return;
+        const controller = new AbortController();
+        request = controller;
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        try {
+          const response = await fetch(urls[index], { signal: controller.signal, cache: 'no-cache' });
+          const text = await response.text();
+          if (!response.ok || !text.trim() || /<\s*(?:!doctype|html|head|body)\b/i.test(text)
+            || text.includes('File Not Found') || !text.includes('--md-sys-color-')) continue;
+          if (scope.signal.aborted) return;
+          if (style.textContent !== text) style.textContent = text;
+          preferred = index;
+          return;
+        } catch (error) {
+          if (scope.signal.aborted) return;
+        } finally {
+          clearTimeout(timeout);
+          if (request === controller) request = null;
+        }
+      }
+    } finally {
+      running = false;
+      // Matugen is an external file: keep its existing refresh cadence, without overlapping requests.
+      if (!scope.signal.aborted) {
+        clearTimeout(timer);
+        timer = setTimeout(refresh, 1500);
+      }
     }
-
-    styleTag.textContent = text;
-  } catch (e) {
-    console.debug(logText, logCss, `Failed to fetch ${link_url}, switching to another URL...`);
-    link_url = link_url === PRIMARY_URL ? FALLBACK_URL : PRIMARY_URL;
   }
+
+  scope.add(() => { clearTimeout(timer); request?.abort(); style.remove(); });
+  refresh();
+  return { refresh };
 }
 
-refresh();
-setInterval(refresh, 1500);
+installColorMode('matugen', startMatugen);

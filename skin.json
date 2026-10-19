@@ -71,16 +71,25 @@
                     }
                 },
                 "Matugen": {
+                    "TargetCss": {
+                        "affects": [".*"], "src": "css/main/colors/matugen-mode.css"
+                    },
                     "TargetJs": {
                         "affects": [".*"], "src": "js/main/colors/matugen.js"
                     }
                 },
                 "Custom": {
+                    "TargetCss": {
+                        "affects": [".*"], "src": "css/main/colors/custom-mode.css"
+                    },
                     "TargetJs": {
                         "affects": [".*"], "src": "js/main/colors/custom.js"
                     }
                 },
                 "Dynamic (Beta)": {
+                    "TargetCss": {
+                        "affects": [".*"], "src": "css/main/colors/dynamic-mode.css"
+                    },
                     "TargetJs": {
                         "affects": [".*"], "src": "js/main/colors/dynamic.js"
                     }
