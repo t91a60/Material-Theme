@@ -6,6 +6,20 @@ const root = path.resolve(process.env.MATERIAL_THEME_TEST_ROOT || path.join(__di
 const { fixtures } = require('./color-fixtures.cjs');
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
+    if (url.pathname === '/matugen-resource.css') {
+        const phase = url.searchParams.get('phase');
+        const endpoint = url.searchParams.get('endpoint');
+        if (phase === 'outage' || phase === 'fallback' && endpoint === 'primary') {
+            res.writeHead(503, { 'Content-Type': 'text/plain' }); res.end('File Not Found'); return;
+        }
+        res.writeHead(200, { 'Content-Type': 'text/css', 'Cache-Control': 'no-store' });
+        if (phase === 'slow-body') {
+            res.write(':root { --md-sys-color-primary: ');
+            const timer = setTimeout(() => res.end('#badbad; }'), 1000);
+            res.on('close', () => clearTimeout(timer));
+        } else res.end(`:root { --md-sys-color-primary: ${phase === 'recovered' ? '#654321' : '#123456'}; }`);
+        return;
+    }
     if (url.pathname === '/fixtures') {
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify(fixtures.map(f => ({ ...f, pixels: [...f.pixels] }))));

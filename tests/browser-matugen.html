@@ -1,0 +1,50 @@
+<!doctype html><meta charset="utf-8"><title>Matugen failure and cleanup checks</title>
+<h1>Matugen: bounded failure/recovery tests</h1><p>Local HTTP failures and real fetch/abort. Not a live Steam endpoint test.</p><pre id="results">Running</pre>
+<script type="module">
+const checks=[];const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const check=(name,passed,detail)=>checks.push({name,passed:!!passed,detail:detail===undefined?undefined:JSON.parse(JSON.stringify(detail))});
+async function until(predicate,label){for(let i=0;i<200;i++){if(predicate())return;await wait(25);}throw Error(label);}
+const frame=document.createElement('iframe');frame.src='/tests/matugen-frame.html';document.body.append(frame);
+try {
+    await until(()=>frame.contentWindow.ready,'module initialization');
+    const w=frame.contentWindow,d=frame.contentDocument,css=()=>d.getElementById('material-matugen-colors')?.textContent;
+    await until(()=>w.requests.length===2&&w.resources().timers.includes(1500),'startup outage');
+    check('both failed startup endpoints leave no invalid CSS',css()==='',w.requests);
+    check('startup outage retains exactly one retry timer',JSON.stringify(w.resources().timers)==='[1500]',w.resources());
+    w.phase='fallback';
+    await until(()=>css()?.includes('#123456'),'alternate endpoint recovery');
+    check('primary HTTP 503 falls back and recovers without reinitialization',w.requests.slice(-2).map(r=>r.endpoint).join(',')==='primary,alternate');
+    const writes=w.styleWrites,requests=w.requests.length;
+    w.phase='outage';
+    await until(()=>w.requests.length>=requests+2&&w.resources().timers.includes(1500),'outage after valid CSS');
+    check('outage after success preserves last valid CSS',css()?.includes('#123456')&&w.styleWrites===writes);
+    w.phase='recovered';
+    await until(()=>css()?.includes('#654321'),'second recovery');
+    check('recovery applies changed CSS',w.styleWrites===writes+1);
+    const unchangedWrites=w.styleWrites,previousRequests=w.requests.length;
+    await until(()=>w.requests.length>previousRequests&&w.resources().timers.includes(1500),'identical refresh');
+    check('identical successful refresh does not rewrite CSS',w.styleWrites===unchangedWrites);
+    for(let i=0;i<10;i++) {
+        await w.reinject(i);
+        await until(()=>w.resources().activeRequests===0&&w.resources().bodyReads===0&&w.resources().timers.includes(1500),'reinjection completion');
+    }
+    check('ten cache-busted injections retain one style and one timer',w.resources().styles===1&&JSON.stringify(w.resources().timers)==='[1500]',w.resources());
+    check('reinjection retains two shared settings observers, not one pair per injection',w.resources().observers===2,w.resources());
+    w.phase='slow-body';await w.reinject('slow');
+    await until(()=>w.bodyReads===1,'pending real response body');
+    const slow=w.requests.at(-1);w.mode('static');
+    await until(()=>w.resources().timers.length===0&&w.bodyReads===0,'mode disposal');
+    check('mode switch aborts the real body read and clears both timeout and retry',slow.aborted&&w.activeRequests===0,w.resources());
+    check('leaving Matugen removes its stylesheet',w.resources().styles===0);
+    w.phase='recovered';w.mode('matugen');
+    await until(()=>css()?.includes('#654321'),'cached module resume');
+    await wait(1100);
+    check('cached mode resumes and late aborted body cannot replace its CSS',css()?.includes('#654321')&&w.resources().styles===1);
+    w.mode('static');await until(()=>w.resources().timers.length===0,'final cleanup');
+    check('final disposal leaves no Matugen requests, body reads or timers',w.activeRequests===0&&w.bodyReads===0,w.resources());
+    check('no unhandled JavaScript errors',w.errors.length===0,w.errors);
+    window.matugenTestReport={browser:navigator.userAgent,checks};
+}catch(error){check('fixture completion',false,String(error.stack));window.matugenTestReport={checks};}
+frame.remove();document.getElementById('results').textContent=JSON.stringify(window.matugenTestReport,null,2);
+await fetch('/results',{method:'POST',body:JSON.stringify(window.matugenTestReport)});
+</script>

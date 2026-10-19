@@ -1,0 +1,32 @@
+<!doctype html><meta charset="utf-8"><title>Isolated Matugen failure fixture</title>
+<style>:root { --material-color-mode:matugen; }</style><body>
+<script type="module">
+window.phase='outage';window.requests=[];window.activeRequests=0;window.bodyReads=0;window.errors=[];window.styleWrites=0;
+addEventListener('error',e=>{if(e.message)window.errors.push(e.message)});
+addEventListener('unhandledrejection',e=>window.errors.push(String(e.reason)));
+const nativeFetch=fetch.bind(window),nativeTimeout=setTimeout.bind(window),nativeClear=clearTimeout.bind(window),NativeObserver=MutationObserver;
+const timers=new Map(),observers=new Set();
+window.setTimeout=(callback,delay,...args)=>{const id=nativeTimeout(()=>{timers.delete(id);callback(...args)},delay);timers.set(id,delay);return id;};
+window.clearTimeout=id=>{timers.delete(id);nativeClear(id);};
+window.MutationObserver=class extends NativeObserver {
+    constructor(callback){super(callback);observers.add(this);}
+    disconnect(){observers.delete(this);super.disconnect();}
+};
+new NativeObserver(records=>{
+    if(records.some(r=>r.target.id==='material-matugen-colors'||r.target.parentNode?.id==='material-matugen-colors'))window.styleWrites++;
+}).observe(document.head,{childList:true,subtree:true,characterData:true});
+window.resources=()=>({timers:[...timers.values()],observers:observers.size,activeRequests,bodyReads,styles:document.querySelectorAll('#material-matugen-colors').length});
+window.fetch=async(url,options)=>{
+    const endpoint=String(url).includes('steamloopback.host')?'primary':'alternate';
+    const record={phase,endpoint,aborted:false};window.requests.push(record);
+    options.signal.addEventListener('abort',()=>{record.aborted=true},{once:true});
+    window.activeRequests++;
+    try {
+        const response=await nativeFetch('/matugen-resource.css?phase='+phase+'&endpoint='+endpoint,options);
+        return {ok:response.ok,text:async()=>{window.bodyReads++;try{return await response.text()}finally{window.bodyReads--;}}};
+    }finally{window.activeRequests--;}
+};
+window.mode=value=>document.documentElement.style.setProperty('--material-color-mode',value);
+window.reinject=id=>import('/js/main/colors/matugen.js?init='+id);
+await import('/js/main/colors/matugen.js');window.ready=true;
+</script>
