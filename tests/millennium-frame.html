@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8"><title>Steam Games List</title>
+<body><script type="module">
+// Reproduce v3.6.2 Conditions/EvaluatePatch/DOMModifier ordering, not Steam internals.
+const query=new URLSearchParams(location.search),mode=query.get('mode'),appearance=query.get('appearance');
+window.injectionErrors=[];addEventListener('error',e=>{if(e.message)window.injectionErrors.push(e.message)});
+addEventListener('unhandledrejection',e=>window.injectionErrors.push(String(e.reason)));
+const localFetch=fetch.bind(window);
+window.fetch=(url,options)=>String(url).includes('/css/main/colors/matugen.css')
+    ?localFetch('/css/main/colors/matugen.css',options):localFetch(url,options);
+const skin=await(await localFetch('/skin.json')).json();
+const selected={Appearance:appearance,Color:mode,'Custom/Dynamic Color Generation Style':'Expressive'};
+window.injected=[];
+function add(type,target) {
+    if(!target?.affects.some(pattern=>new RegExp(pattern).test(document.title)))return;
+    const src='/'+target.src;
+    const selector=type==='css'?`link[href='${src}']`:`script[src='${src}'][type='module']`;
+    if(document.querySelector(selector))return;
+    const element=document.createElement(type==='css'?'link':'script');element.id='millennium-injected';
+    if(type==='css'){element.rel='stylesheet';element.href=src;}else{element.type='module';element.src=src;}
+    document.head.append(element);window.injected.push({type,src});
+}
+for(const [condition,definition]of Object.entries(skin.Conditions)) {
+    const patch=definition.values?.[selected[condition]];if(!patch)continue;
+    add('css',patch.TargetCss);add('js',patch.TargetJs);
+}
+const colors=document.createElement('style');colors.id='RootColors';
+colors.innerText=await(await localFetch('/css/main/root-colors.css')).text();document.head.append(colors);
+window.injectionReady=true;
+</script>

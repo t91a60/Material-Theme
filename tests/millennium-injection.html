@@ -1,0 +1,26 @@
+<!doctype html><meta charset="utf-8"><title>Millennium condition injection fixture</title>
+<h1>skin.json module injection checks</h1><p>Offline reproduction of v3.6.2 DOM injection, not a live Steam test.</p><pre id="results">Running</pre>
+<script type="module">
+const checks=[];const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const check=(name,passed,detail)=>checks.push({name,passed:!!passed,detail});
+try {
+    localStorage.removeItem('material-dynamic-color');
+    for(const mode of ['Dynamic (Beta)','Custom','Matugen'])for(const appearance of ['Light','Dark','OLED']) {
+        const frame=document.createElement('iframe');frame.src='/tests/millennium-frame.html?mode='+encodeURIComponent(mode)+'&appearance='+appearance;document.body.append(frame);
+        let ready=false;
+        for(let i=0;i<150;i++) {
+            const d=frame.contentDocument,w=frame.contentWindow;
+            const style=d?.getElementById(mode==='Matugen'?'material-matugen-colors':'material-colors');
+            if(w.injectionReady&&style?.textContent.includes('--md-sys-color-primary:')){ready=true;break;}
+            await wait(25);
+        }
+        const d=frame.contentDocument,w=frame.contentWindow,computed=w.getComputedStyle(d.documentElement);
+        check(`${mode}/${appearance}: CSS marker + module initializes`,ready&&computed.getPropertyValue('--material-color-mode').trim()===(mode==='Dynamic (Beta)'?'dynamic':mode.toLowerCase()),w.injected);
+        check(`${mode}/${appearance}: no uncaught errors`,w.injectionErrors?.length===0,w.injectionErrors);
+        frame.remove();
+    }
+}catch(error){check('fixture completion',false,String(error.stack));}
+window.millenniumInjectionReport={browser:navigator.userAgent,checks};
+document.getElementById('results').textContent=JSON.stringify(window.millenniumInjectionReport,null,2);
+await fetch('/results',{method:'POST',body:JSON.stringify(window.millenniumInjectionReport)});
+</script>

@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
-const root = path.resolve(__dirname, '..');
+const root = path.resolve(process.env.MATERIAL_THEME_TEST_ROOT || path.join(__dirname, '..'));
 const { fixtures } = require('./color-fixtures.cjs');
 const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
