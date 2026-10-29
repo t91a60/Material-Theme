@@ -12,7 +12,7 @@
 <div align="center">
 
 # Material
-### Theme for Steam ([Millenium](https://steambrew.app)) based on Google's Material 3 Design with some Features.
+### A Steam theme for [Millennium](https://steambrew.app), based on Google's Material 3 design.
 [Discord](https://discord.gg/aGcKmX5KTs) | [Patreon](https://www.patreon.com/c/flowird) | [Ko-fi](https://ko-fi.com/flowird)
 
 ## Screenshots
@@ -20,6 +20,14 @@
 ![Dynamic](https://raw.githubusercontent.com/kuska1/Material-Theme/refs/heads/main/.github/dynamic.gif)
 
 </div>
+
+## Setup and customization
+
+This is a theme for the Steam client, not a standalone application. Install [Millennium](https://steambrew.app) and use the [upstream project](https://github.com/kuska1/Material-Theme) for official releases and installation guidance. This fork does not provide its own release or compatibility guarantees.
+
+The checked-in [`skin.json`](skin.json) identifies the theme as **Material**, version **1.5.17**. Its conditions define the available appearance, color, typography, layout, and visual privacy options. Configure those options through Millennium's theme settings. Keep the manifest, CSS, JavaScript, and font assets together when working with a local copy.
+
+Dynamic color is marked beta, and several restyles remain works in progress. The privacy options change what the interface displays; they do not change Steam account privacy settings.
 
 ## Features:
 ### UI
@@ -73,3 +81,21 @@
 * [Discord Server](https://discord.gg/aGcKmX5KTs)
 * [Patreon](https://www.patreon.com/c/flowird)
 * [Ko-fi](https://ko-fi.com/flowird)
+
+## Development
+
+The theme is plain CSS and JavaScript loaded through Millennium. There is no package manifest, build command, or automated test suite in this snapshot.
+
+| Path | Purpose |
+| --- | --- |
+| [`skin.json`](skin.json) | Theme metadata, selectable conditions, and patch mappings |
+| [`css/main/`](css/main/) | Core styles, appearance modes, and Steam page restyles |
+| [`css/options/`](css/options/) | Styles enabled by theme options |
+| [`js/`](js/) | Color generation and optional interface effects |
+| Root `*.custom.css` files and [`webkit.css`](webkit.css) | CSS entry points for Steam interfaces |
+
+When changing a condition, check its referenced asset paths against the repository. Test changes in Steam with Millennium, including the affected pages and appearance modes. Steam UI updates can change selectors; include your Steam and Millennium versions when reporting visual problems. Use the upstream support links above for official support and contributions.
+
+## License
+
+[MIT](LICENSE). Copyright (c) 2025–2026 Bogdan Kus'. Preserve the license and upstream attribution when redistributing the theme.
